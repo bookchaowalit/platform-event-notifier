@@ -116,15 +116,19 @@ def _drain(
             envelope = json.loads(message.value() or b"")
         except (ValueError, UnicodeDecodeError):
             envelope = None
+        text = None
+        if isinstance(envelope, dict):
+            try:
+                text = render(envelope)
+            except (KeyError, ValueError, TypeError, OverflowError):
+                envelope = None  # a malformed event can never succeed: count it, commit, move on
         if not isinstance(envelope, dict):
             result.invalid += 1
+        elif text is None:
+            result.ignored += 1
         else:
-            text = render(envelope)
-            if text is None:
-                result.ignored += 1
-            else:
-                send(text)  # SendError: stop before committing, retried next run
-                result.notified += 1
+            send(text)  # SendError: stop before committing, retried next run
+            result.notified += 1
         consumer.commit(message)
 
 

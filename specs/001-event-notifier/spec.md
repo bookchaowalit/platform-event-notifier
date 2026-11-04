@@ -16,7 +16,7 @@ looking. The first consumer turns two kinds of events into a Telegram message.
 | `intake.intake.failed`, `intake.intake.rejected` | `data.ingest.v1` | ⚠️ intake key, domain/dataset, attempt, error code |
 
 Every other event is read, counted as ignored and committed. A body that is not a JSON object is
-counted as invalid and committed (it can never succeed).
+counted as invalid and committed (it can never succeed); so is a matching event whose fields cannot be rendered (for example a payment without an amount), so one bad event never blocks the group.
 
 ## Guarantees
 

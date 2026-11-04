@@ -78,6 +78,15 @@ def test_notifies_matching_events_and_commits_every_offset():
     assert fake.committed == [0, 1, 2]
 
 
+def test_malformed_matching_event_is_invalid_not_fatal():
+    sent = []
+    broken = event("payment.intent.succeeded", currency="thb")  # no amount
+    fake = FakeConsumer([FakeMessage(broken, 0), FakeMessage(FAILED, 1)])
+    result = run(fake, sent.append, clock=Clock())
+    assert (result.status, result.invalid, result.notified) == ("ok", 1, 1)
+    assert fake.committed == [0, 1]
+
+
 def test_send_failure_stops_before_commit():
     def broken(_text):
         raise SendError("telegram send failed (URLError)")
