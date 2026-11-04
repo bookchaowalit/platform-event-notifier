@@ -1,0 +1,32 @@
+[project]
+name = "platform-event-notifier"
+version = "0.1.0"
+description = "ADR-0008 consumer: Telegram notifications for selected domain events"
+requires-python = ">=3.12"
+dependencies = ["confluent-kafka>=2.16,<3"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-cov>=7", "mypy>=2.4"]
+
+[project.scripts]
+event-notifier = "event_notifier.consumer:main"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["event_notifier"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.mypy]
+files = ["src"]
+ignore_missing_imports = true
