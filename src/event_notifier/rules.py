@@ -40,6 +40,31 @@ def _intake_alert(data: dict[str, Any]) -> str:
     )
 
 
+def _short(value: Any) -> str:
+    return str(value or "?")[:8]
+
+
+def _credits_mismatch(data: dict[str, Any]) -> str:
+    currency = str(data.get("currency") or "thb")
+    expected = data.get("expected_amount")
+    amount = f": expected {money(int(expected), currency)}" if isinstance(expected, int) else ""
+    observed = data.get("observed_amount")
+    seen = f", payment says {money(int(observed), currency)}" if isinstance(observed, int) else ""
+    return (
+        f"⚠️ Credits top-up mismatch ({data.get('reason', '?')}){amount}{seen}"
+        f"\ntopup {_short(data.get('topup_id'))} intent {_short(data.get('intent_id'))}"
+    )
+
+
+def _credits_refunded(data: dict[str, Any]) -> str:
+    currency = str(data.get("currency") or "thb")
+    return (
+        f"⚠️ Credits top-up refunded: {money(int(data['refunded_amount']), currency)}"
+        f" of {money(int(data['amount']), currency)} — credits may need a manual reversal"
+        f"\ntopup {_short(data.get('topup_id'))} account {_short(data.get('account_id'))}"
+    )
+
+
 def render(envelope: dict[str, Any]) -> str | None:
     """The message for one envelope, or None when no rule wants it."""
     kind = envelope.get("type")
@@ -50,4 +75,9 @@ def render(envelope: dict[str, Any]) -> str | None:
         return _payment_succeeded(data)
     if kind.startswith("intake.intake.") and data.get("status") in INTAKE_ALERT_STATUSES:
         return _intake_alert(data)
+    # platform-credits SPEC-003 F7: mismatches and refunds alert; settled / captured stay silent.
+    if kind == "credits.topup.mismatch":
+        return _credits_mismatch(data)
+    if kind == "credits.topup.refunded":
+        return _credits_refunded(data)
     return None
